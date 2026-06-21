@@ -1,0 +1,4 @@
+# M3 — performance in-distribution (linear probe sur CheXpert Plus).
+name: in_dist
+head: linear        # linear | mlp
+n_bootstrap: 1000

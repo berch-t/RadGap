@@ -1,0 +1,6 @@
+# NIH ChestX-ray14 — test OOD sans accréditation (filet de repli C1).
+name: nih_cxr14
+modality: cxr
+role: ood_test
+raw_dir: ${data_root}/raw/nih_cxr14
+manifest: ${data_root}/manifests/nih_cxr14.parquet

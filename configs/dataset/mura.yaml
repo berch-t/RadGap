@@ -1,0 +1,6 @@
+# MURA — radio os, transfert cross-région thorax -> os (C4, stretch).
+name: mura
+modality: msk
+role: transfer
+raw_dir: ${data_root}/raw/mura
+manifest: ${data_root}/manifests/mura.parquet

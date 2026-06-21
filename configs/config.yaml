@@ -1,0 +1,14 @@
+defaults:
+  - dataset: chexpert_plus
+  - backbone: rad_dino
+  - experiment: in_dist
+  - _self_
+
+seed: 42
+data_root: ${oc.env:RADGAP_DATA_ROOT}   # chemin machine-specific via env var, jamais committé
+output_dir: experiments/${experiment.name}/${backbone.name}/${dataset.name}
+uncertainty_policy: u_zeros              # politique CheXpert : u_zeros | u_ones | ignore (figée à M1)
+
+wandb:
+  project: radgap
+  mode: offline

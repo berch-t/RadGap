@@ -1,0 +1,4 @@
+# M4 — generalization gap cross-dataset (C1, résultat cœur).
+name: gen_gap
+targets: [nih_cxr14, padchest, vindr_cxr]
+n_bootstrap: 1000

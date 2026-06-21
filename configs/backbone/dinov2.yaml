@@ -1,0 +1,5 @@
+# DINOv2-ImageNet — baseline domaine général ("le pré-entraînement médical vaut-il le coup ?").
+name: dinov2
+hf_id: facebook/dinov2-base
+embed_dim: 768
+frozen: true

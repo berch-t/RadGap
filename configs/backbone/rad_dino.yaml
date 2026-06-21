@@ -1,0 +1,5 @@
+# RAD-DINO — foundation model principal (ViT-B/14 DINOv2 spécialisé CXR).
+name: rad-dino
+hf_id: microsoft/rad-dino
+embed_dim: 768
+frozen: true

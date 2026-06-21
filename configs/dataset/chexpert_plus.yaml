@@ -1,0 +1,7 @@
+# CheXpert Plus — dataset in-distribution principal (C1) + démographie (C3).
+# Subsume CheXpert standalone (non proposé séparément par Stanford AIMI).
+name: chexpert_plus
+modality: cxr
+role: train_principal
+raw_dir: ${data_root}/raw/chexpert_plus
+manifest: ${data_root}/manifests/chexpert_plus.parquet

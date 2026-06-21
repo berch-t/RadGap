@@ -1,0 +1,5 @@
+# DenseNet-121 (CheXpert) — baseline supervisée historique via torchxrayvision.
+name: densenet121-chexpert
+source: torchxrayvision
+weights: densenet121-res224-chex
+frozen: true
