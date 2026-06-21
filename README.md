@@ -18,9 +18,8 @@ _Comparer plusieurs encodeurs de vision **gelés** sur trois axes scientifiques 
 ---
 
 > [!WARNING]
-> **Projet de recherche en cours** (jalon M0 — bootstrap terminé). Le code modèle/données arrive aux jalons M1+.
-> Suivi de l'avancement : [`PLAN.md`](PLAN.md) · Contexte technique complet : [`CLAUDE.md`](CLAUDE.md).
-> Usage **recherche uniquement** — ce n'est pas un dispositif médical.
+> -  **Projet de recherche en cours** (jalon M0 — bootstrap terminé). Le code modèle/données arrive aux jalons M1+.
+> - Usage **recherche uniquement** — ce n'est pas un dispositif médical.
 
 ## Table des matières
 
