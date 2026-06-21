@@ -20,6 +20,8 @@ dependencies = [
     "pillow>=10.0",
     "pandas>=2.2",
     "pyarrow>=16.0",
+    "redivis>=0.10",
+    "kagglehub>=0.3",
     "scikit-learn>=1.4",
     "scipy>=1.13",
     "statsmodels>=0.14",
@@ -32,7 +34,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.0", "ruff>=0.5"]
+dev = ["pytest>=8.0", "ruff>=0.5", "jupytext>=1.16"]
 
 [build-system]
 requires = ["hatchling"]
@@ -57,6 +59,11 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Notebooks jupytext (format percent) : imports par cellule (E402) et builtins Jupyter
+# comme display() (F821) sont normaux.
+"notebooks/*" = ["E402", "F821", "E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

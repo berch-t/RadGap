@@ -123,14 +123,34 @@ download → manifest unifié → extract embeddings (cache disque) → train t�
 ```
 
 ```bash
-uv run python scripts/download_chexpert_plus.py     # M1
-uv run python scripts/build_manifest.py             # M1 → data/manifests/unified.parquet
+uv run python scripts/download_aimi.py --dataset chexpert_plus   # M1 (Redivis, token AIMI)
+uv run python scripts/download_aimi.py --dataset mura            # M1
+uv run python scripts/download_nih.py                            # M1 (Kaggle, OOD)
+uv run python scripts/build_manifest.py                          # M1 → data/manifests/unified.parquet
+uv run python scripts/validate_manifests.py                      # M1 (0 fuite patient, labels valides)
 uv run python scripts/extract_embeddings.py -m backbone=rad_dino,dinov2,biomedclip   # M3
 uv run python scripts/evaluate.py experiment=gen_gap                                  # M4
 uv run python scripts/make_figures.py               # M4+ → experiments/figures/*.png
 ```
 
 Chaque figure se régénère à partir d'un CSV versionné dans `experiments/results/` — **exigence de reproductibilité**.
+
+### Notebooks (un par phase ML/DL)
+
+Notebooks académiques commentés au format **percent / jupytext** (`.py` versionnables, convertis en `.ipynb` à la volée) :
+
+```bash
+uv run jupytext --to notebook notebooks/01_eda_and_label_harmonization.py   # puis ouvrir le .ipynb
+```
+
+| Notebook | Phase | Jalon |
+|----------|-------|:-----:|
+| `01_eda_and_label_harmonization` | EDA + harmonisation des labels | M1 |
+| `02_preprocessing_and_augmentation` | Préprocessing radiologique CXR-safe | M3 |
+| `03_embeddings_and_linear_probing` | Embeddings gelés + têtes légères | M3 |
+| `04_cross_dataset_generalization_gap` | Generalization gap (C1 ★) | M4 |
+| `05_label_efficiency` | Courbes d'efficacité-label (C2) | M5 |
+| `06_fairness_audit` | Audit d'équité démographique (C3) | M6 |
 
 ## Structure du dépôt
 
@@ -143,7 +163,7 @@ radgap/
 ├── src/radgap/                      # package : data · preprocessing · models · eval · utils
 ├── scripts/                         # CLI : download · extract · train · evaluate · figures
 ├── experiments/                     # sorties : embeddings (gitignored), résultats CSV, figures
-├── notebooks/                       # EDA uniquement (jamais de logique métier)
+├── notebooks/                       # 6 notebooks académiques (.py percent / jupytext), 1 par phase
 ├── tests/                           # pytest (CI)
 └── .claude/skills/                  # 5 skills : data · preprocessing · adaptation · eval · repro
 ```
@@ -186,8 +206,8 @@ Question scientifique centrale (C1) : _les foundation models médicaux (RAD-DINO
 
 | Jalon | Objectif | Statut |
 |-------|----------|:------:|
-| M0 | Bootstrap & infrastructure | 🟡 |
-| M1 | Acquisition & harmonisation des données | ⬜ |
+| M0 | Bootstrap & infrastructure | ✅ |
+| M1 | Acquisition & harmonisation des données | 🟡 |
 | M2 | Baseline supervisée (DenseNet-121) | ⬜ |
 | M3 | Embeddings FMs + linear probes (in-dist) | ⬜ |
 | M4 ★ | Generalization gap cross-dataset (C1) | ⬜ |
