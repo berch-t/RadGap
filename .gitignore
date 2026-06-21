@@ -5,15 +5,22 @@ experiments/embeddings/
 *.ckpt
 *.pt
 wandb/
+
 # Python
 __pycache__/
 *.pyc
 .venv/
 .env
+
 # Secrets : clé API Stanford AIMI
 AIMI_API_KEY.txt
-# (env.example EST committé — c'est le template sans secret)
+
 # Hydra / outputs
 outputs/
 multirun/
 .hydra/
+
+# Config
+CLAUDE.md
+PLAN.md
+.claude/

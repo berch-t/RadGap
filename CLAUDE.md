@@ -17,6 +17,8 @@
 
 > RÈGLE TDAH : si une nouvelle idée surgit, la noter dans la section "Idées parking" en bas, PAS l'implémenter. On finit le jalon en cours d'abord (cf. PLAN.md).
 
+> 📄 RÈGLE DOC VIVANTE : à **chaque changement structurant** (nouveau script/module, dépendance, jalon avancé, décision technique, résultat), **mettre à jour le `README.md`** dans le même mouvement — il doit toujours refléter l'état réel du projet. Détail en §13.
+
 ---
 
 ## 1. Contexte
@@ -159,3 +161,23 @@ radgap/
 - Génération de compte-rendu (MAIRA / MedGemma)
 - IRM 3D (MRNet) avec un encodeur volumique
 - Test-time adaptation pour réduire le generalization gap (méthode, pas juste mesure)
+
+---
+
+## 13. Documentation vivante — mettre à jour le README à chaque évolution
+
+**Commande / réflexe obligatoire** : le `README.md` est la vitrine publique du projet et doit **toujours** être synchrone avec le code. À chaque changement structurant, le mettre à jour **dans le même commit que le changement**.
+
+**Déclencheurs (quand mettre à jour le README) :**
+- Un jalon change de statut → mettre à jour la table **Feuille de route** + les badges/statuts.
+- Nouveau script CLI, module, ou dépendance → mettre à jour **Installation / Démarrage rapide / Structure du dépôt**.
+- Nouvelle décision technique (cf. §7) ou changement de dataset/backbone → répercuter dans **Datasets / Model zoo / Méthodologie**.
+- Premiers résultats (M3+) → remplir la table **Résultats** (avec IC, jamais de chiffre nu).
+- Changement de licence, d'éthique, ou de procédure d'accès aux données → section **Éthique, licences & données**.
+
+**Comment :**
+1. Éditer `README.md` à la main pour les changements ciblés (préféré).
+2. Pour une passe complète post-jalon, utiliser le skill gstack **`/document-release`** (synchronise README/ARCHITECTURE/CHANGELOG avec le diff).
+3. Vérifier que la commande de repro du README tourne encore (`uv run python scripts/check_env.py`, `uv run pytest -q`).
+
+> Garde-fou : un README qui ment (commande cassée, jalon faux, résultat périmé) est pire que pas de README. Si tu n'as pas le temps de le mettre à jour, note-le dans `PLAN.md` plutôt que de laisser une info fausse.
