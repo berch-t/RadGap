@@ -56,9 +56,15 @@ explicit = true
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+src = ["src", "scripts", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP"]
+
+[tool.ruff.lint.isort]
+# Détermine first-party explicitement : la détection auto diffère local vs CI
+# (radgap vivant sous src/ peut être classé third-party selon l'environnement).
+known-first-party = ["radgap"]
 
 [tool.ruff.lint.per-file-ignores]
 # Notebooks jupytext (format percent) : imports par cellule (E402) et builtins Jupyter
