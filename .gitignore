@@ -1,5 +1,6 @@
 # Données : JAMAIS commit (licences recherche Stanford / PhysioNet)
-data/
+# Ancré à la racine (/) pour ne PAS matcher le sous-package src/radgap/data/
+/data/
 experiments/embeddings/
 *.npy
 *.ckpt
@@ -11,6 +12,13 @@ __pycache__/
 *.pyc
 .venv/
 .env
+
+# Build / caches
+dist/
+build/
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
 
 # Secrets : clé API Stanford AIMI
 AIMI_API_KEY.txt
