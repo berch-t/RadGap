@@ -7,7 +7,8 @@ defaults:
 seed: 42
 data_root: ${oc.env:RADGAP_DATA_ROOT}   # chemin machine-specific via env var, jamais committé
 output_dir: experiments/${experiment.name}/${backbone.name}/${dataset.name}
-uncertainty_policy: u_zeros              # politique CheXpert : u_zeros | u_ones | ignore (figée à M1)
+uncertainty_policy: auto                 # auto = défaut par pathologie | u_zeros | u_ones | ignore
+label_section: impression                # section CheXbert : impression (défaut) | findings | report
 
 wandb:
   project: radgap

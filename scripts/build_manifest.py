@@ -42,13 +42,18 @@ def main(cfg: DictConfig) -> None:
 
     cxr_frames: list[pd.DataFrame] = []
 
-    chex_csv = _first_existing(*raw.glob("chexpert_plus/*.csv"))
-    if chex_csv:
-        log.info("CheXpert Plus : %s", chex_csv)
-        df = load_chexpert_plus(chex_csv, global_policy=policy)
+    section = cfg.get("label_section", "impression")  # findings | impression | report
+    chex_meta = _first_existing(
+        raw / "chexpert_plus" / "df_chexpert_plus_240401.csv",
+        *raw.glob("chexpert_plus/df_chexpert*.csv"),
+    )
+    chex_labels = _first_existing(raw / "chexpert_plus" / f"{section}_fixed.json")
+    if chex_meta and chex_labels:
+        log.info("CheXpert Plus : meta=%s labels=%s (section=%s)", chex_meta, chex_labels, section)
+        df = load_chexpert_plus(chex_meta, chex_labels, global_policy=policy)
         cxr_frames.append(split_by_patient(df, seed=cfg.seed))
     else:
-        log.warning("CheXpert Plus absent — sauté")
+        log.warning("CheXpert Plus incomplet (meta=%s, labels=%s) — sauté", chex_meta, chex_labels)
 
     nih_csv = _first_existing(raw / "nih_cxr14" / "Data_Entry_2017.csv")
     if nih_csv:

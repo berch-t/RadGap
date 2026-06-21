@@ -12,28 +12,41 @@ from radgap.data import (
 
 
 def test_load_chexpert_plus(tmp_path):
-    csv = tmp_path / "df_chexpert_plus_240401.csv"
+    paths = [
+        "train/patient00001/study1/view1_frontal.jpg",
+        "train/patient00002/study1/view1_lateral.jpg",
+    ]
+    meta = tmp_path / "df_chexpert_plus_240401.csv"
     pd.DataFrame(
         {
-            "path_to_image": [
-                "train/patient00001/study1/view1_frontal.jpg",
-                "train/patient00002/study1/view1_lateral.jpg",
-            ],
+            "path_to_image": paths,
+            "deid_patient_id": ["patient00001", "patient00002"],
             "frontal_lateral": ["Frontal", "Lateral"],
+            "ap_pa": ["PA", ""],
             "sex": ["Male", "Female"],
             "age": [55, 70],
+            "race": ["White", "Asian"],
+            "split": ["train", "valid"],
+        }
+    ).to_csv(meta, index=False)
+
+    labels = tmp_path / "impression_fixed.json"
+    pd.DataFrame(
+        {
+            "path_to_image": paths,
             "Cardiomegaly": [1.0, 0.0],
             "Atelectasis": [-1.0, 0.0],  # incertain -> u_ones par défaut
             "Edema": [-1.0, 1.0],  # incertain -> u_ones par défaut
             "No Finding": [0.0, 1.0],
         }
-    ).to_csv(csv, index=False)
+    ).to_json(labels, orient="records", lines=True)
 
-    df = load_chexpert_plus(csv)
+    df = load_chexpert_plus(meta, labels)
     assert df["dataset"].unique().tolist() == ["chexpert_plus"]
     assert df["patient_id"].tolist() == ["chexpert_plus_patient00001", "chexpert_plus_patient00002"]
+    assert df["view"].tolist() == ["PA", "LATERAL"]
     assert df["sex"].tolist() == ["M", "F"]
-    # politique d'incertitude par pathologie appliquée
+    # politique d'incertitude par pathologie appliquée (join metadata + labels)
     assert df[canonical_column("Atelectasis")].iloc[0] == 1.0
     assert df[canonical_column("Edema")].iloc[0] == 1.0
     assert df[canonical_column("Cardiomegaly")].tolist() == [1.0, 0.0]
