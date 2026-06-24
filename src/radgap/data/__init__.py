@@ -23,6 +23,11 @@ from radgap.data.manifest import (
     load_manifest,
     save_manifest,
 )
+from radgap.data.paths import (
+    filter_available,
+    present_image_keys,
+    resolve_image_path,
+)
 from radgap.data.schema import (
     METADATA_COLUMNS,
     label_columns,
@@ -46,12 +51,15 @@ __all__ = [
     "canonical_column",
     "canonical_pathologies",
     "expand_nih_findings",
+    "filter_available",
     "harmonize_labels",
     "label_columns",
     "load_chexpert_plus",
     "load_manifest",
     "load_mura",
     "load_nih",
+    "present_image_keys",
+    "resolve_image_path",
     "resolve_policy",
     "save_manifest",
     "split_by_patient",

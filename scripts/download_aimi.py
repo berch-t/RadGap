@@ -5,8 +5,10 @@ Stanford AIMI est un **token Redivis** : on l'expose sous `REDIVIS_API_TOKEN`.
 
 Structure CheXpert Plus (org AIMI) :
   - `df_chexpert_plus_240401` : table STRUCTURÉE (labels + démographie) -> récupérée en DataFrame
-  - `PNG_train` / `PNG_valid`  : images PNG downsampled (recommandé pour itérer)
-  - `PNG_compressed`           : archives PNG (download groupé, bien plus rapide)
+  - `PNG_train` / `PNG_valid`  : images PNG (download fichier par fichier, ~223k fichiers)
+  - `PNG_compressed`           : 5 archives .zip (~720 Go) — download groupé bien plus rapide ;
+                                 ce script les télécharge ET les extrait une par une (pic disque
+                                 ~155 Go, l'archive est supprimée après extraction)
   - `DICOM_train` / `DICOM_valid` : DICOM haute-résolution (résultats finaux)
 
 Auth (par ordre de priorité) : env `REDIVIS_API_TOKEN`, env `AIMI_API_KEY`, fichier
@@ -24,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import zipfile
 from pathlib import Path
 
 REDIVIS_ORG = "AIMI"
@@ -70,6 +73,36 @@ def _data_root() -> Path:
     if not root:
         raise SystemExit("RADGAP_DATA_ROOT non défini (cf. env.example).")
     return Path(root)
+
+
+def _download_and_extract_zips(table, out_dir: Path) -> None:
+    """Télécharge puis extrait des archives .zip une par une.
+
+    Stratégie économe en disque : download d'une archive -> extraction -> suppression
+    de l'archive -> marqueur `.extracted`. Le pic disque reste de l'ordre d'une archive
+    (~155 Go) au lieu de la somme des archives (~720 Go). Idempotent et reprenable :
+    une archive déjà extraite (marqueur présent) est ignorée.
+    """
+    files = list(table.list_files())
+    print(f"  {len(files)} archive(s) à télécharger puis extraire")
+    for f in files:
+        name = f.name
+        if not name.endswith(".zip"):
+            print(f"  ⚠ {name} : pas une archive .zip, ignoré")
+            continue
+        marker = out_dir / f".{name}.extracted"
+        if marker.exists():
+            print(f"  ↷ {name} déjà extrait, skip")
+            continue
+        zip_path = out_dir / name
+        print(f"  ↓ {name} …")
+        f.download(path=str(out_dir), overwrite=False)
+        print(f"  ⇲ extraction {name} …")
+        with zipfile.ZipFile(zip_path) as zf:
+            zf.extractall(out_dir)
+        zip_path.unlink(missing_ok=True)
+        marker.write_text("ok\n")
+        print(f"  ✓ {name} extrait, archive supprimée")
 
 
 def main() -> int:
@@ -124,9 +157,13 @@ def main() -> int:
     if variant not in spec["variants"]:
         raise SystemExit(f"variant inconnu {variant!r} (dispo : {list(spec['variants'])})")
     print(f"Téléchargement des images (variant '{variant}') -> {out_dir}")
+    is_compressed = "compressed" in variant
     for table_name in spec["variants"][variant]:
         try:
-            ds.table(table_name).download_files(path=str(out_dir), overwrite=False)
+            if is_compressed:
+                _download_and_extract_zips(ds.table(table_name), out_dir)
+            else:
+                ds.table(table_name).download_files(path=str(out_dir), overwrite=False)
             print(f"  ✓ {table_name}")
         except Exception as exc:  # noqa: BLE001  (on continue les autres tables)
             print(f"  ⚠ {table_name} : {exc}")

@@ -18,7 +18,7 @@ _Comparer plusieurs encodeurs de vision **gelés** sur trois axes scientifiques 
 ---
 
 > [!WARNING]
-> -  **Projet de recherche en cours** (jalon M0 — bootstrap terminé). Le code modèle/données arrive aux jalons M1+.
+> - **Projet de recherche en cours** : M0 (infra) et M1 (données) terminés ; **M3 en cours** (extraction d'embeddings + linear probing). Premiers résultats in-distribution imminents.
 > - Usage **recherche uniquement** — ce n'est pas un dispositif médical.
 
 ## Table des matières
@@ -85,6 +85,9 @@ Tous les backbones sont évalués **gelés** sous le même protocole.
 
 > **Aucune donnée n'est versionnée dans ce dépôt** (licences recherche). On commit les _scripts_ de téléchargement, jamais les pixels. CheXpert Plus subsume CheXpert (non proposé seul par Stanford AIMI) et fournit la démographie pour C3.
 
+> [!NOTE]
+> **Limite d'egress Redivis (100 Go / 30 j).** CheXpert Plus PNG complet (~720 Go en 5 archives) ne peut pas être exporté en une fois. Le développement se fait sur un **sous-ensemble disponible** (manifest `available.parquet`, filtré sur les images présentes via `scripts/build_available_manifest.py`). Le dataset complet sera récupéré par un **export redimensionné** (resize 518² sur Redivis → ~15-67 Go, sous la limite) — c'est de toute façon l'entrée des foundation models. NIH (Kaggle) n'est pas concerné.
+
 ## Installation
 
 Prérequis : [`uv`](https://github.com/astral-sh/uv), un GPU NVIDIA avec CUDA 12.x (testé sur RTX 4080 Super, driver 591.86, WSL2).
@@ -105,12 +108,12 @@ uv run python scripts/check_env.py     # vérifie GPU + forward AMP
 ## Démarrage rapide
 
 ```bash
-uv run pytest -q                       # suite de tests
+uv run pytest -q                       # suite de tests (33)
 uv run ruff check .                    # lint
 
-# Hydra : tout est paramétré, rien en dur. Exemple (jalons M3+) :
-uv run python scripts/train.py backbone=rad_dino dataset=chexpert_plus experiment=in_dist
-uv run python scripts/train.py -m backbone=rad_dino,dinov2,biomedclip   # sweep multi-backbone
+# Hydra : tout est paramétré, rien en dur. Exemple (M3, embeddings déjà extraits) :
+uv run python scripts/train_probe.py backbone=rad_dino experiment.head=linear
+uv run python scripts/train_probe.py -m backbone=rad_dino,dinov2   # sweep multi-backbone
 ```
 
 ## Reproduire un résultat
@@ -118,28 +121,29 @@ uv run python scripts/train.py -m backbone=rad_dino,dinov2,biomedclip   # sweep 
 Le pipeline complet (disponible au fil des jalons) régénère chaque table et figure depuis zéro :
 
 ```
-download → manifest unifié → extract embeddings (cache disque) → train têtes → evaluate → figures
+download → manifest unifié → (manifest disponible) → extract embeddings (cache disque) → train têtes → evaluate → figures
 ```
 
 ```bash
-uv run python scripts/download_aimi.py --dataset chexpert_plus   # M1 (Redivis, token AIMI)
-uv run python scripts/download_aimi.py --dataset mura            # M1
-uv run python scripts/download_nih.py                            # M1 (Kaggle, OOD)
-uv run python scripts/build_manifest.py                          # M1 → data/manifests/unified.parquet
-uv run python scripts/validate_manifests.py                      # M1 (0 fuite patient, labels valides)
-uv run python scripts/extract_embeddings.py -m backbone=rad_dino,dinov2,biomedclip   # M3
-uv run python scripts/evaluate.py experiment=gen_gap                                  # M4
-uv run python scripts/make_figures.py               # M4+ → experiments/figures/*.png
+uv run python scripts/download_aimi.py --dataset chexpert_plus --variant png_compressed  # M1 (Redivis ; archives auto-extraites)
+uv run python scripts/download_aimi.py --dataset mura                                     # M1
+uv run python scripts/download_nih.py                                                     # M1 (Kaggle, OOD ; cache → data root)
+uv run python scripts/build_manifest.py                                                   # M1 → manifests/unified.parquet
+uv run python scripts/validate_manifests.py                                               # M1 (0 fuite patient, labels valides)
+uv run python scripts/build_available_manifest.py                                         # M1 → manifests/available.parquet (images présentes)
+uv run python scripts/extract_embeddings.py -m backbone=rad_dino,dinov2                   # M3 → embeddings/<backbone>/… (cache disque)
+uv run python scripts/train_probe.py -m backbone=rad_dino,dinov2                          # M3 → experiments/results/auroc_in_distribution.csv
 ```
 
-Chaque figure se régénère à partir d'un CSV versionné dans `experiments/results/` — **exigence de reproductibilité**.
+Chaque table se régénère à partir d'un CSV versionné dans `experiments/results/` — **exigence de reproductibilité**.
 
 ### Notebooks (un par phase ML/DL)
 
-Notebooks académiques commentés au format **percent / jupytext** (`.py` versionnables, convertis en `.ipynb` à la volée) :
+Notebooks académiques commentés au format **percent / jupytext** : les `.py` sont la source versionnée, les `.ipynb` appairés sont fournis (édite l'un ou l'autre, ils restent synchro).
 
 ```bash
-uv run jupytext --to notebook notebooks/01_eda_and_label_harmonization.py   # puis ouvrir le .ipynb
+uv run jupytext --to notebook notebooks/*.py     # (re)générer les .ipynb si besoin
+uv run jupyter lab notebooks/                    # via Cursor Remote-WSL : kernel « Python 3 (radgap) »
 ```
 
 | Notebook | Phase | Jalon |
@@ -183,16 +187,18 @@ Détails dans les skills [`.claude/skills/`](.claude/skills/) (`medical-ml-evalu
 
 ## Résultats
 
-> _À venir._ Les tables et figures seront générées aux jalons M3 (in-distribution), M4 (generalization gap, C1), M5 (efficacité-label, C2), M6 (équité, C3). Aperçu de la structure attendue :
+> **Premiers résultats M3 (préliminaires)** — linear probe gelé sur **un subset de CheXpert Plus** (49 091 images, limite d'egress Redivis ; cf. note plus haut). Macro-AUROC sur 9 pathologies évaluables (« No Finding » non évaluable : une seule classe au test CheXpert). IC 95 % bootstrap (1000 rééch.). Générés par `scripts/train_probe.py` → `experiments/results/auroc_in_distribution.csv`.
 
-| Backbone | AUROC in-dist (CheXpert Plus) | Δ AUROC OOD (NIH / PadChest / VinDr) |
+| Backbone | Macro-AUROC in-dist (CheXpert Plus, subset) | Δ AUROC OOD (NIH / PadChest / VinDr) |
 |----------|:----------------------------:|:------------------------------------:|
-| RAD-DINO | _M3_ | _M4_ |
-| DINOv2-ImageNet | _M3_ | _M4_ |
-| BiomedCLIP | _M3_ | _M4_ |
-| DenseNet-121 (baseline) | _M3_ | _M4_ |
+| **RAD-DINO** | **0.819** (0.802–0.833) | _M4_ |
+| DINOv2-ImageNet | 0.792 (0.777–0.806) | _M4_ |
+| BiomedCLIP | _à venir_ | _M4_ |
+| DenseNet-121 (baseline) | _M2_ | _M4_ |
 
-Question scientifique centrale (C1) : _les foundation models médicaux (RAD-DINO) présentent-ils un generalization gap plus faible que les baselines ImageNet/supervisées ?_
+Aperçu de la question C1 : à protocole identique (backbones **gelés**), **RAD-DINO devance DINOv2-ImageNet sur les 9 pathologies évaluables** (+2,7 pts macro ; +5,8 sur cardiomégalie et pneumothorax) — le pré-entraînement médical aide en in-distribution. Confirmation par **test de DeLong** à venir. Question centrale (C1, M4) : _les foundation models médicaux présentent-ils un generalization gap plus faible que les baselines ImageNet/supervisées ?_
+
+> _Tables M4 (generalization gap, C1), M5 (efficacité-label, C2), M6 (équité, C3) à venir aux jalons correspondants._
 
 ## Éthique, licences & données
 
@@ -206,9 +212,9 @@ Question scientifique centrale (C1) : _les foundation models médicaux (RAD-DINO
 | Jalon | Objectif | Statut |
 |-------|----------|:------:|
 | M0 | Bootstrap & infrastructure | ✅ |
-| M1 | Acquisition & harmonisation des données | 🟡 |
+| M1 | Acquisition & harmonisation des données | ✅ |
 | M2 | Baseline supervisée (DenseNet-121) | ⬜ |
-| M3 | Embeddings FMs + linear probes (in-dist) | ⬜ |
+| M3 | Embeddings FMs + linear probes (in-dist) | 🟡 |
 | M4 ★ | Generalization gap cross-dataset (C1) | ⬜ |
 | M5 | Courbes d'efficacité-label (C2) | ⬜ |
 | M6 | Audit d'équité (C3) | ⬜ |

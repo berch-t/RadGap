@@ -5,10 +5,10 @@ Chaque ligne = une image. Voir SKILL `medical-imaging-data`.
 
 from __future__ import annotations
 
-import os
-
 import numpy as np
 import pandas as pd
+
+from radgap.data.paths import resolve_image_path
 
 # Colonnes de métadonnées obligatoires (hors colonnes de labels `label_*`).
 METADATA_COLUMNS: list[str] = [
@@ -71,10 +71,10 @@ def validate_manifest(df: pd.DataFrame, *, data_root: str | None = None) -> list
             problems.append(f"colonne {col} : valeurs hors {{0,1,NaN}} -> {bad_vals}")
 
     # Chemins images (optionnel, nécessite les fichiers sur disque)
-    if data_root is not None and "image_path" in df.columns:
+    if data_root is not None and {"image_path", "dataset"} <= set(df.columns):
         n_broken = 0
-        for rel in df["image_path"]:
-            if not os.path.exists(os.path.join(data_root, str(rel))):
+        for rel, dataset in zip(df["image_path"], df["dataset"], strict=False):
+            if not resolve_image_path(str(rel), str(dataset), data_root).exists():
                 n_broken += 1
         if n_broken:
             problems.append(f"{n_broken} chemin(s) image cassé(s) sous {data_root}")
